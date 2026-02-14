@@ -114,6 +114,7 @@ pre {
   font-size: 14px;
   background: rgba(255, 255, 255, 0.8);
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .topbar-message {
@@ -254,6 +255,7 @@ pre {
   padding: 8px;
   display: grid;
   gap: 2px;
+  min-height: 58px;
 }
 
 .preview-grid span {
@@ -262,8 +264,21 @@ pre {
 }
 
 .preview-grid strong {
+  display: block;
   font-size: 14px;
   color: var(--text-strong);
+  line-height: 1.25;
+  min-height: 1.25em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-grid strong[title],
+.pool-strip strong[title],
+.metric-card dd[title] {
+  cursor: help;
 }
 
 .hint {
@@ -302,6 +317,12 @@ pre {
 
 .pool-strip strong {
   font-size: 12px;
+  line-height: 1.25;
+  min-height: 1.25em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 .viz-card {
@@ -379,6 +400,12 @@ pre {
   margin: 0;
   color: var(--text-strong);
   font-size: 13px;
+  line-height: 1.25;
+  min-height: 1.25em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 .history-panel {

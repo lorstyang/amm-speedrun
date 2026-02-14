@@ -59,6 +59,13 @@ export function AddLiquidityCard({
     setMessage('流动性已添加并写入历史');
   };
 
+  const usedXText = quote?.ok ? formatFp(quote.amountXUsed, 8) : '--';
+  const usedYText = quote?.ok ? formatFp(quote.amountYUsed, 8) : '--';
+  const refundXText = quote?.ok ? formatFp(quote.refundX, 8) : '--';
+  const refundYText = quote?.ok ? formatFp(quote.refundY, 8) : '--';
+  const lpMintText = quote?.ok ? formatFp(quote.lpMint, 8) : '--';
+  const lpShareText = quote?.ok ? `${formatPercentFp(quote.lpShareAfter, 4)}%` : '--';
+
   return (
     <Card title="Add Liquidity">
       <NumberField
@@ -86,27 +93,27 @@ export function AddLiquidityCard({
       <div className="preview-grid">
         <div>
           <span>Used {tokenXSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.amountXUsed, 8) : '--'}</strong>
+          <strong title={usedXText}>{usedXText}</strong>
         </div>
         <div>
           <span>Used {tokenYSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.amountYUsed, 8) : '--'}</strong>
+          <strong title={usedYText}>{usedYText}</strong>
         </div>
         <div>
           <span>Refund {tokenXSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.refundX, 8) : '--'}</strong>
+          <strong title={refundXText}>{refundXText}</strong>
         </div>
         <div>
           <span>Refund {tokenYSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.refundY, 8) : '--'}</strong>
+          <strong title={refundYText}>{refundYText}</strong>
         </div>
         <div>
           <span>LP Mint</span>
-          <strong>{quote?.ok ? formatFp(quote.lpMint, 8) : '--'}</strong>
+          <strong title={lpMintText}>{lpMintText}</strong>
         </div>
         <div>
           <span>User LP Share After</span>
-          <strong>{quote?.ok ? `${formatPercentFp(quote.lpShareAfter, 4)}%` : '--'}</strong>
+          <strong title={lpShareText}>{lpShareText}</strong>
         </div>
       </div>
 

@@ -48,6 +48,10 @@ export function RemoveLiquidityCard({
     setMessage('赎回成功，历史已更新');
   };
 
+  const outXText = quote?.ok ? formatFp(quote.outX, 8) : '--';
+  const outYText = quote?.ok ? formatFp(quote.outY, 8) : '--';
+  const lpShareText = quote?.ok ? `${formatPercentFp(quote.lpShareAfter, 4)}%` : '--';
+
   return (
     <Card title="Remove Liquidity">
       <NumberField
@@ -68,15 +72,15 @@ export function RemoveLiquidityCard({
       <div className="preview-grid">
         <div>
           <span>Out {tokenXSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.outX, 8) : '--'}</strong>
+          <strong title={outXText}>{outXText}</strong>
         </div>
         <div>
           <span>Out {tokenYSymbol}</span>
-          <strong>{quote?.ok ? formatFp(quote.outY, 8) : '--'}</strong>
+          <strong title={outYText}>{outYText}</strong>
         </div>
         <div>
           <span>User LP Share After</span>
-          <strong>{quote?.ok ? `${formatPercentFp(quote.lpShareAfter, 4)}%` : '--'}</strong>
+          <strong title={lpShareText}>{lpShareText}</strong>
         </div>
       </div>
 

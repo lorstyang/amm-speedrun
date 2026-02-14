@@ -20,6 +20,25 @@ export function MetricsPanel({ state }: MetricsPanelProps) {
   const k = toNumber(state.reserveX) * toNumber(state.reserveY);
   const trade = state.lastTrade;
   const impactInput = estimateOnePercentImpactInputX(state);
+  const spotText = `${formatFp(spot, 8)} ${state.tokenY.symbol}`;
+  const reservesText = `${formatFp(state.reserveX, 6)} ${state.tokenX.symbol} / ${formatFp(state.reserveY, 6)} ${state.tokenY.symbol}`;
+  const kText = k.toFixed(6);
+  const feeRateText = `${formatPercentFp(state.feeRate, 4)}%`;
+  const directionText = trade ? (trade.direction === 'X_TO_Y' ? 'X->Y' : 'Y->X') : '--';
+  const avgPriceText = trade ? formatFp(trade.avgPriceYPerX, 8) : '--';
+  const totalSlippageText = trade ? `${formatPercentFp(trade.slippageTotal, 4)}%` : '--';
+  const curveFeeText = trade
+    ? `${formatPercentFp(trade.slippageCurve, 4)}% / ${formatPercentFp(trade.feeImpactRate, 4)}%`
+    : '--';
+  const feeLossText = trade
+    ? `${formatFp(trade.feeImpactOutToken, 8)} ${trade.direction === 'X_TO_Y' ? state.tokenY.symbol : state.tokenX.symbol}`
+    : '--';
+  const lpTotalText = formatFp(state.lpTotalSupply, 8);
+  const lpUserText = formatFp(state.lpUserBalance, 8);
+  const lpShareText = `${formatPercentFp(lpShare, 4)}%`;
+  const feeAccXText = formatFp(state.feeAccX, 8);
+  const feeAccYText = formatFp(state.feeAccY, 8);
+  const impactInputText = `~${formatFp(impactInput, 6)} ${state.tokenX.symbol}`;
 
   return (
     <section className="metrics-panel">
@@ -28,23 +47,19 @@ export function MetricsPanel({ state }: MetricsPanelProps) {
         <dl>
           <div>
             <dt>Spot (1 {state.tokenX.symbol})</dt>
-            <dd>
-              {formatFp(spot, 8)} {state.tokenY.symbol}
-            </dd>
+            <dd title={spotText}>{spotText}</dd>
           </div>
           <div>
             <dt>Reserves</dt>
-            <dd>
-              {formatFp(state.reserveX, 6)} {state.tokenX.symbol} / {formatFp(state.reserveY, 6)} {state.tokenY.symbol}
-            </dd>
+            <dd title={reservesText}>{reservesText}</dd>
           </div>
           <div>
             <dt>k</dt>
-            <dd>{k.toFixed(6)}</dd>
+            <dd title={kText}>{kText}</dd>
           </div>
           <div>
             <dt>Fee Rate</dt>
-            <dd>{formatPercentFp(state.feeRate, 4)}%</dd>
+            <dd title={feeRateText}>{feeRateText}</dd>
           </div>
         </dl>
       </article>
@@ -54,31 +69,23 @@ export function MetricsPanel({ state }: MetricsPanelProps) {
         <dl>
           <div>
             <dt>Direction</dt>
-            <dd>{trade ? (trade.direction === 'X_TO_Y' ? 'X->Y' : 'Y->X') : '--'}</dd>
+            <dd title={directionText}>{directionText}</dd>
           </div>
           <div>
             <dt>Avg Price (Y/X)</dt>
-            <dd>{trade ? formatFp(trade.avgPriceYPerX, 8) : '--'}</dd>
+            <dd title={avgPriceText}>{avgPriceText}</dd>
           </div>
           <div>
             <dt>Total Slippage</dt>
-            <dd>{trade ? `${formatPercentFp(trade.slippageTotal, 4)}%` : '--'}</dd>
+            <dd title={totalSlippageText}>{totalSlippageText}</dd>
           </div>
           <div>
             <dt>Curve / Fee</dt>
-            <dd>
-              {trade
-                ? `${formatPercentFp(trade.slippageCurve, 4)}% / ${formatPercentFp(trade.feeImpactRate, 4)}%`
-                : '--'}
-            </dd>
+            <dd title={curveFeeText}>{curveFeeText}</dd>
           </div>
           <div>
             <dt>Fee Loss (out token)</dt>
-            <dd>
-              {trade
-                ? `${formatFp(trade.feeImpactOutToken, 8)} ${trade.direction === 'X_TO_Y' ? state.tokenY.symbol : state.tokenX.symbol}`
-                : '--'}
-            </dd>
+            <dd title={feeLossText}>{feeLossText}</dd>
           </div>
         </dl>
       </article>
@@ -88,29 +95,27 @@ export function MetricsPanel({ state }: MetricsPanelProps) {
         <dl>
           <div>
             <dt>LP Total</dt>
-            <dd>{formatFp(state.lpTotalSupply, 8)}</dd>
+            <dd title={lpTotalText}>{lpTotalText}</dd>
           </div>
           <div>
             <dt>User LP</dt>
-            <dd>{formatFp(state.lpUserBalance, 8)}</dd>
+            <dd title={lpUserText}>{lpUserText}</dd>
           </div>
           <div>
             <dt>User Share</dt>
-            <dd>{formatPercentFp(lpShare, 4)}%</dd>
+            <dd title={lpShareText}>{lpShareText}</dd>
           </div>
           <div>
             <dt>Fee Acc ({state.tokenX.symbol})</dt>
-            <dd>{formatFp(state.feeAccX, 8)}</dd>
+            <dd title={feeAccXText}>{feeAccXText}</dd>
           </div>
           <div>
             <dt>Fee Acc ({state.tokenY.symbol})</dt>
-            <dd>{formatFp(state.feeAccY, 8)}</dd>
+            <dd title={feeAccYText}>{feeAccYText}</dd>
           </div>
           <div>
             <dt>1% Price Impact Input</dt>
-            <dd>
-              ~{formatFp(impactInput, 6)} {state.tokenX.symbol}
-            </dd>
+            <dd title={impactInputText}>{impactInputText}</dd>
           </div>
         </dl>
       </article>

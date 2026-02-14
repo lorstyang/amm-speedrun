@@ -55,6 +55,12 @@ export function SwapCard({
 
   const inSymbol = direction === 'X_TO_Y' ? tokenXSymbol : tokenYSymbol;
   const outSymbol = direction === 'X_TO_Y' ? tokenYSymbol : tokenXSymbol;
+  const outputText = quote?.ok ? `${formatFp(quote.amountOut, 8)} ${outSymbol}` : '--';
+  const avgPriceText = quote?.ok ? formatFp(quote.avgPriceYPerX, 8) : '--';
+  const feeText = quote?.ok ? `${formatFp(quote.feeAmountInToken, 8)} ${inSymbol}` : '--';
+  const slippageText = quote?.ok ? `${formatPercentFp(quote.slippageTotal, 4)}%` : '--';
+  const curveImpactText = quote?.ok ? `${formatPercentFp(quote.slippageCurve, 4)}%` : '--';
+  const feeImpactText = quote?.ok ? `${formatPercentFp(quote.feeImpactRate, 4)}%` : '--';
 
   return (
     <Card title="Swap">
@@ -100,31 +106,27 @@ export function SwapCard({
       <div className="preview-grid">
         <div>
           <span>Output</span>
-          <strong>
-            {quote?.ok ? `${formatFp(quote.amountOut, 8)} ${outSymbol}` : '--'}
-          </strong>
+          <strong title={outputText}>{outputText}</strong>
         </div>
         <div>
           <span>Avg Price (Y/X)</span>
-          <strong>{quote?.ok ? formatFp(quote.avgPriceYPerX, 8) : '--'}</strong>
+          <strong title={avgPriceText}>{avgPriceText}</strong>
         </div>
         <div>
           <span>Fee</span>
-          <strong>
-            {quote?.ok ? `${formatFp(quote.feeAmountInToken, 8)} ${inSymbol}` : '--'}
-          </strong>
+          <strong title={feeText}>{feeText}</strong>
         </div>
         <div>
           <span>Total Slippage</span>
-          <strong>{quote?.ok ? `${formatPercentFp(quote.slippageTotal, 4)}%` : '--'}</strong>
+          <strong title={slippageText}>{slippageText}</strong>
         </div>
         <div>
           <span>Curve Impact</span>
-          <strong>{quote?.ok ? `${formatPercentFp(quote.slippageCurve, 4)}%` : '--'}</strong>
+          <strong title={curveImpactText}>{curveImpactText}</strong>
         </div>
         <div>
           <span>Fee Impact</span>
-          <strong>{quote?.ok ? `${formatPercentFp(quote.feeImpactRate, 4)}%` : '--'}</strong>
+          <strong title={feeImpactText}>{feeImpactText}</strong>
         </div>
       </div>
 
