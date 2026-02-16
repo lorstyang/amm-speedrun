@@ -4,9 +4,12 @@ import {
   applyRemoveLiquidity,
   applySwapExactIn,
   createInitialPoolState,
+  quoteArbitrageToExternalPrice,
   quoteAddLiquidity,
   quoteRemoveLiquidity,
-  quoteSwapExactIn
+  quoteSwapExactIn,
+  relativeSpread,
+  spotPriceYPerX
 } from '../src/core/ammV2';
 import { parseFp } from '../src/core/math';
 
@@ -85,5 +88,47 @@ describe('ammV2 add/remove liquidity', () => {
     expect(next.reserveX).toBe(state.reserveX - quote.outX);
     expect(next.reserveY).toBe(state.reserveY - quote.outY);
     expect(next.lpUserBalance).toBe(state.lpUserBalance - burnHalf);
+  });
+});
+
+describe('ammV2 arbitrage', () => {
+  it('finds profitable Y->X arbitrage when external price is higher', () => {
+    const state = createInitialPoolState({ reserveX: '1000', reserveY: '2000', feeRate: '0.003' });
+    const external = parseFp('2.4');
+
+    const quote = quoteArbitrageToExternalPrice(state, external);
+    expect(quote.ok).toBe(true);
+    if (!quote.ok) {
+      return;
+    }
+
+    expect(quote.direction).toBe('Y_TO_X');
+    expect(quote.expectedProfitInY).toBeGreaterThan(0n);
+    expect(quote.spreadAfter).toBeLessThan(quote.spreadBefore);
+
+    const next = applySwapExactIn(state, quote.swapQuote);
+    const nextSpread = relativeSpread(spotPriceYPerX(next), external);
+    expect(nextSpread).toBeLessThan(quote.spreadBefore);
+  });
+
+  it('finds profitable X->Y arbitrage when external price is lower', () => {
+    const state = createInitialPoolState({ reserveX: '1000', reserveY: '2000', feeRate: '0.003' });
+    const external = parseFp('1.6');
+
+    const quote = quoteArbitrageToExternalPrice(state, external);
+    expect(quote.ok).toBe(true);
+    if (!quote.ok) {
+      return;
+    }
+
+    expect(quote.direction).toBe('X_TO_Y');
+    expect(quote.expectedProfitInY).toBeGreaterThan(0n);
+    expect(quote.spreadAfter).toBeLessThan(quote.spreadBefore);
+  });
+
+  it('rejects arbitrage when external price equals pool price', () => {
+    const state = createInitialPoolState({ reserveX: '1000', reserveY: '2000', feeRate: '0.003' });
+    const quote = quoteArbitrageToExternalPrice(state, parseFp('2'));
+    expect(quote.ok).toBe(false);
   });
 });

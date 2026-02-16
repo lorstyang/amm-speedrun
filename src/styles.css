@@ -108,6 +108,7 @@ pre {
 .topbar select,
 .field input {
   height: 36px;
+  width: 100%;
   border: 1px solid rgba(35, 41, 24, 0.2);
   border-radius: 10px;
   padding: 0 10px;
@@ -174,6 +175,7 @@ pre {
 .field {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .field-label {
@@ -241,6 +243,18 @@ pre {
   padding: 0 9px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.inline-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .preview-grid {
@@ -487,6 +501,11 @@ pre {
   }
 
   .pool-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-fields,
+  .action-row {
     grid-template-columns: 1fr;
   }
 }

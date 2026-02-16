@@ -1,5 +1,6 @@
 import {
   AddLiquidityQuote,
+  ArbitrageQuote,
   PoolState,
   RemoveLiquidityQuote,
   SwapDirection,
@@ -342,4 +343,182 @@ export function poolValueInY(state: PoolState): bigint {
     return state.reserveY;
   }
   return state.reserveY + fpMul(state.reserveX, spotPriceYPerX(state));
+}
+
+function absBig(value: bigint): bigint {
+  return value < ZERO ? -value : value;
+}
+
+export function relativeSpread(base: bigint, target: bigint): bigint {
+  if (target <= ZERO) {
+    return ZERO;
+  }
+  return fpDiv(absBig(base - target), target);
+}
+
+function buildInvalidArbQuote(
+  externalPriceYPerX: bigint,
+  direction: SwapDirection,
+  error: string
+): ArbitrageQuote {
+  return {
+    ok: false,
+    error,
+    externalPriceYPerX,
+    direction,
+    amountIn: ZERO,
+    amountOut: ZERO,
+    spotPriceBeforeYPerX: ZERO,
+    spotPriceAfterYPerX: ZERO,
+    spreadBefore: ZERO,
+    spreadAfter: ZERO,
+    expectedProfitInY: ZERO,
+    swapQuote: buildInvalidSwapQuote(direction, ZERO, error)
+  };
+}
+
+function shouldIncreaseInput(
+  direction: SwapDirection,
+  quote: SwapQuote,
+  externalPriceYPerX: bigint
+): boolean {
+  if (direction === 'X_TO_Y') {
+    return quote.spotPriceAfterYPerX > externalPriceYPerX;
+  }
+  return quote.spotPriceAfterYPerX < externalPriceYPerX;
+}
+
+function isBetterSwapCandidate(
+  candidate: SwapQuote,
+  currentBest: SwapQuote | null,
+  externalPriceYPerX: bigint
+): boolean {
+  if (!candidate.ok) {
+    return false;
+  }
+  if (!currentBest || !currentBest.ok) {
+    return true;
+  }
+  const candidateDiff = absBig(candidate.spotPriceAfterYPerX - externalPriceYPerX);
+  const bestDiff = absBig(currentBest.spotPriceAfterYPerX - externalPriceYPerX);
+  if (candidateDiff < bestDiff) {
+    return true;
+  }
+  if (candidateDiff > bestDiff) {
+    return false;
+  }
+  return candidate.amountIn < currentBest.amountIn;
+}
+
+function expectedProfitInY(quote: SwapQuote, externalPriceYPerX: bigint): bigint {
+  if (!quote.ok) {
+    return ZERO;
+  }
+  if (quote.direction === 'X_TO_Y') {
+    const spentY = fpMul(quote.amountIn, externalPriceYPerX);
+    return quote.amountOut - spentY;
+  }
+  const receivedY = fpMul(quote.amountOut, externalPriceYPerX);
+  return receivedY - quote.amountIn;
+}
+
+export function quoteArbitrageToExternalPrice(
+  state: PoolState,
+  externalPriceYPerX: bigint
+): ArbitrageQuote {
+  if (externalPriceYPerX <= ZERO) {
+    return buildInvalidArbQuote(externalPriceYPerX, 'X_TO_Y', 'External price must be greater than zero');
+  }
+  if (state.reserveX <= ZERO || state.reserveY <= ZERO) {
+    return buildInvalidArbQuote(externalPriceYPerX, 'X_TO_Y', 'Pool reserves are empty');
+  }
+
+  const spotBefore = spotPriceYPerX(state);
+  if (spotBefore === externalPriceYPerX) {
+    return buildInvalidArbQuote(externalPriceYPerX, 'X_TO_Y', 'Pool price already equals external price');
+  }
+
+  const direction: SwapDirection = externalPriceYPerX > spotBefore ? 'Y_TO_X' : 'X_TO_Y';
+  const inReserve = direction === 'X_TO_Y' ? state.reserveX : state.reserveY;
+
+  if (inReserve <= ZERO) {
+    return buildInvalidArbQuote(externalPriceYPerX, direction, 'Invalid input reserve');
+  }
+
+  const maxBound = maxBig(1n, inReserve * 1_000_000n);
+  let low = 1n;
+  let high = maxBig(1n, inReserve / 1_000n);
+  let best: SwapQuote | null = null;
+
+  for (let i = 0; i < 90; i += 1) {
+    const q = quoteSwapExactIn(state, direction, high);
+    if (!q.ok) {
+      break;
+    }
+    if (isBetterSwapCandidate(q, best, externalPriceYPerX)) {
+      best = q;
+    }
+    if (!shouldIncreaseInput(direction, q, externalPriceYPerX)) {
+      break;
+    }
+    low = high;
+    high = high * 2n;
+    if (high > maxBound) {
+      high = maxBound;
+      break;
+    }
+  }
+
+  let left = minBig(low, high);
+  let right = maxBig(low, high);
+
+  for (let i = 0; i < 90 && left <= right; i += 1) {
+    const mid = (left + right) / 2n;
+    if (mid <= ZERO) {
+      break;
+    }
+    const q = quoteSwapExactIn(state, direction, mid);
+    if (!q.ok) {
+      right = mid - 1n;
+      continue;
+    }
+    if (isBetterSwapCandidate(q, best, externalPriceYPerX)) {
+      best = q;
+    }
+    if (shouldIncreaseInput(direction, q, externalPriceYPerX)) {
+      left = mid + 1n;
+    } else {
+      right = mid - 1n;
+    }
+  }
+
+  if (!best || !best.ok) {
+    return buildInvalidArbQuote(externalPriceYPerX, direction, 'Unable to find an arbitrage trade');
+  }
+
+  const spreadBefore = relativeSpread(spotBefore, externalPriceYPerX);
+  const spreadAfter = relativeSpread(best.spotPriceAfterYPerX, externalPriceYPerX);
+  const profitInY = expectedProfitInY(best, externalPriceYPerX);
+
+  if (profitInY <= ZERO) {
+    return buildInvalidArbQuote(
+      externalPriceYPerX,
+      direction,
+      'No profitable arbitrage after fees at this external price'
+    );
+  }
+
+  return {
+    ok: true,
+    externalPriceYPerX,
+    direction,
+    amountIn: best.amountIn,
+    amountOut: best.amountOut,
+    spotPriceBeforeYPerX: spotBefore,
+    spotPriceAfterYPerX: best.spotPriceAfterYPerX,
+    spreadBefore,
+    spreadAfter,
+    expectedProfitInY: profitInY,
+    swapQuote: best
+  };
 }

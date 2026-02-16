@@ -1,6 +1,6 @@
 export type SwapDirection = 'X_TO_Y' | 'Y_TO_X';
 
-export type OperationKind = 'init' | 'swap' | 'add' | 'remove' | 'reset' | 'import';
+export type OperationKind = 'init' | 'swap' | 'add' | 'remove' | 'arb' | 'reset' | 'import';
 
 export type PresetId = 'deep' | 'shallow' | 'imbalanced' | 'zeroFee';
 
@@ -88,6 +88,28 @@ export interface RemoveLiquidityQuote {
   outX: bigint;
   outY: bigint;
   lpShareAfter: bigint;
+}
+
+export interface ArbitrageQuote {
+  ok: boolean;
+  error?: string;
+  externalPriceYPerX: bigint;
+  direction: SwapDirection;
+  amountIn: bigint;
+  amountOut: bigint;
+  spotPriceBeforeYPerX: bigint;
+  spotPriceAfterYPerX: bigint;
+  spreadBefore: bigint;
+  spreadAfter: bigint;
+  expectedProfitInY: bigint;
+  swapQuote: SwapQuote;
+}
+
+export interface AutoArbitrageResult {
+  ok: boolean;
+  error?: string;
+  steps: number;
+  finalSpread: bigint;
 }
 
 export interface TimelineEntry {

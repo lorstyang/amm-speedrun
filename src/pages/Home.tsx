@@ -1,4 +1,5 @@
 import { AddLiquidityCard } from '../components/actions/AddLiquidityCard';
+import { ExternalArbitrageCard } from '../components/actions/ExternalArbitrageCard';
 import { RemoveLiquidityCard } from '../components/actions/RemoveLiquidityCard';
 import { SwapCard } from '../components/actions/SwapCard';
 import { CurveChartV2 } from '../components/charts/CurveChartV2';
@@ -41,6 +42,14 @@ export function Home() {
             reserveY={state.reserveY}
             onQuote={store.actions.quoteSwap}
             onSwap={store.actions.applySwap}
+          />
+          <ExternalArbitrageCard
+            tokenXSymbol={state.tokenX.symbol}
+            tokenYSymbol={state.tokenY.symbol}
+            spotPriceYPerX={store.actions.spotPrice()}
+            onQuote={store.actions.quoteArbitrage}
+            onApplyStep={store.actions.applyArbitrage}
+            onApplyAuto={store.actions.applyArbitrageAuto}
           />
           <AddLiquidityCard
             tokenXSymbol={state.tokenX.symbol}

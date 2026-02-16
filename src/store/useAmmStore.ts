@@ -5,15 +5,19 @@ import {
   applySwapExactIn,
   cloneState,
   createInitialPoolState,
+  quoteArbitrageToExternalPrice,
   quoteAddLiquidity,
   quoteRemoveLiquidity,
   quoteSwapExactIn,
+  relativeSpread,
   spotPriceYPerX
 } from '../core/ammV2';
 import { parseFp } from '../core/math';
 import { deserializePoolState, serializePoolState } from '../core/serialization';
 import {
   AddLiquidityQuote,
+  ArbitrageQuote,
+  AutoArbitrageResult,
   OperationKind,
   PoolState,
   PresetConfig,
@@ -227,6 +231,114 @@ export function useAmmStore() {
       },
       quoteRemoveLiquidity(burnLp: bigint): RemoveLiquidityQuote {
         return quoteRemoveLiquidity(present, burnLp);
+      },
+      quoteArbitrage(externalPriceYPerX: bigint): ArbitrageQuote {
+        return quoteArbitrageToExternalPrice(present, externalPriceYPerX);
+      },
+      applyArbitrage(externalPriceYPerX: bigint): ArbitrageQuote {
+        let response = quoteArbitrageToExternalPrice(present, externalPriceYPerX);
+        if (!response.ok) {
+          return response;
+        }
+        setTimelineState((prev) => {
+          const current = currentSnapshot(prev);
+          const verifiedQuote = quoteArbitrageToExternalPrice(current, externalPriceYPerX);
+          response = verifiedQuote;
+          if (!verifiedQuote.ok) {
+            return prev;
+          }
+          const next = applySwapExactIn(current, verifiedQuote.swapQuote);
+          const symbolIn = verifiedQuote.direction === 'X_TO_Y' ? current.tokenX.symbol : current.tokenY.symbol;
+          const symbolOut = verifiedQuote.direction === 'X_TO_Y' ? current.tokenY.symbol : current.tokenX.symbol;
+          return commitEntry(prev, {
+            kind: 'arb',
+            label: `Arb ${symbolIn}->${symbolOut}`,
+            snapshot: next
+          });
+        });
+        return response;
+      },
+      applyArbitrageAuto(
+        externalPriceYPerX: bigint,
+        maxSteps: number,
+        toleranceRate: bigint
+      ): AutoArbitrageResult {
+        const safeSteps = Number.isFinite(maxSteps) ? Math.max(1, Math.min(50, Math.trunc(maxSteps))) : 5;
+        const safeTolerance = toleranceRate < 0n ? 0n : toleranceRate;
+        let response: AutoArbitrageResult = {
+          ok: false,
+          error: 'Auto arbitrage did not execute',
+          steps: 0,
+          finalSpread: 0n
+        };
+
+        setTimelineState((prev) => {
+          const current = currentSnapshot(prev);
+          const startSpread = relativeSpread(spotPriceYPerX(current), externalPriceYPerX);
+
+          if (startSpread <= safeTolerance) {
+            response = {
+              ok: false,
+              error: 'Spread already within tolerance',
+              steps: 0,
+              finalSpread: startSpread
+            };
+            return prev;
+          }
+
+          let nextState = cloneState(current);
+          let steps = 0;
+          let finalSpread = startSpread;
+
+          for (let i = 0; i < safeSteps; i += 1) {
+            const arbQuote = quoteArbitrageToExternalPrice(nextState, externalPriceYPerX);
+            if (!arbQuote.ok) {
+              if (steps === 0) {
+                response = {
+                  ok: false,
+                  error: arbQuote.error ?? 'No arbitrage trade available',
+                  steps: 0,
+                  finalSpread
+                };
+              }
+              break;
+            }
+
+            nextState = applySwapExactIn(nextState, arbQuote.swapQuote);
+            steps += 1;
+            finalSpread = relativeSpread(spotPriceYPerX(nextState), externalPriceYPerX);
+
+            if (finalSpread <= safeTolerance) {
+              break;
+            }
+          }
+
+          if (steps === 0) {
+            if (!response.error) {
+              response = {
+                ok: false,
+                error: 'No arbitrage step executed',
+                steps: 0,
+                finalSpread
+              };
+            }
+            return prev;
+          }
+
+          response = {
+            ok: true,
+            steps,
+            finalSpread
+          };
+
+          return commitEntry(prev, {
+            kind: 'arb',
+            label: `Arb Auto x${steps}`,
+            snapshot: nextState
+          });
+        });
+
+        return response;
       },
       applyRemoveLiquidity(burnLp: bigint): RemoveLiquidityQuote {
         const quote = quoteRemoveLiquidity(present, burnLp);
