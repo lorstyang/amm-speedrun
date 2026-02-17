@@ -449,28 +449,33 @@ pre {
 }
 
 .axis-line {
-  stroke: rgba(34, 39, 24, 0.75);
-  stroke-width: 1.2;
+  stroke: rgba(34, 39, 24, 0.45);
+  stroke-width: 1;
 }
 
 .axis-grid {
-  stroke: rgba(34, 39, 24, 0.12);
+  stroke: rgba(34, 39, 24, 0.1);
   stroke-width: 1;
 }
 
 .axis-tick {
-  stroke: rgba(34, 39, 24, 0.55);
+  stroke: rgba(34, 39, 24, 0.45);
   stroke-width: 1;
 }
 
 .axis-text {
-  fill: rgba(34, 39, 24, 0.72);
-  font-size: 10px;
+  fill: rgba(34, 39, 24, 0.68);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .axis-title {
-  fill: rgba(17, 23, 9, 0.9);
-  font-size: 11px;
+  fill: rgba(17, 23, 9, 0.82);
+  font-size: 10px;
+}
+
+.axis-title-y {
+  font-size: 9px;
 }
 
 .metrics-panel {

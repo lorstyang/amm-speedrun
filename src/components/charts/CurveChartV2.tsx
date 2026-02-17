@@ -116,8 +116,15 @@ function generateTicks(min: number, max: number, count: number): number[] {
 
 function formatAxisNumber(value: number): string {
   const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    return new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumFractionDigits: 1
+    }).format(value);
+  }
   if (abs >= 1000) {
-    return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    return value.toLocaleString('en-US', { maximumFractionDigits: 1 });
   }
   if (abs >= 1) {
     return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -128,12 +135,6 @@ function formatAxisNumber(value: number): string {
 export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Props) {
   const width = 520;
   const height = 280;
-  const plot: PlotArea = {
-    left: 52,
-    right: width - 12,
-    top: 12,
-    bottom: height - 34
-  };
 
   const reserveX = toNumber(state.reserveX);
   const reserveY = toNumber(state.reserveY);
@@ -180,6 +181,18 @@ export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Pro
   }
 
   const domain = deriveDomain(allPoints);
+  const xTicks = generateTicks(domain.minX, domain.maxX, 5);
+  const yTicks = generateTicks(domain.minY, domain.maxY, 5);
+  const yTickLabels = yTicks.map((tick) => formatAxisNumber(tick));
+  const maxYLabelChars = Math.max(...yTickLabels.map((label) => label.length), 3);
+
+  const plot: PlotArea = {
+    left: Math.min(130, Math.max(64, 16 + maxYLabelChars * 7.2)),
+    right: width - 12,
+    top: 12,
+    bottom: height - 34
+  };
+
   const curvePath = pathFromPoints(curvePoints, plot, domain);
 
   const current = projectPoint({ x: reserveX, y: reserveY }, plot, domain);
@@ -192,8 +205,6 @@ export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Pro
   const afterLabel = after ? labels?.afterLabel ?? placeLabel(after, plot, 10, -10) : null;
   const currentLabel = !after ? placeLabel(current, plot, 10, 16) : null;
 
-  const xTicks = generateTicks(domain.minX, domain.maxX, 5);
-  const yTicks = generateTicks(domain.minY, domain.maxY, 5);
   const xTitle = `reserveX (${state.tokenX.symbol})`;
   const yTitle = `reserveY (${state.tokenY.symbol})`;
 
@@ -217,14 +228,14 @@ export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Pro
           );
         })}
 
-        {yTicks.map((tick) => {
+        {yTicks.map((tick, index) => {
           const p = projectPoint({ x: domain.minX, y: tick }, plot, domain);
           return (
             <g key={`y-${tick}`}>
               <line x1={plot.left} y1={p.py} x2={plot.right} y2={p.py} className="axis-grid" />
               <line x1={plot.left - 4} y1={p.py} x2={plot.left} y2={p.py} className="axis-tick" />
               <text x={plot.left - 7} y={p.py + 3} textAnchor="end" className="axis-text">
-                {formatAxisNumber(tick)}
+                {yTickLabels[index]}
               </text>
             </g>
           );
@@ -237,11 +248,11 @@ export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Pro
           {xTitle}
         </text>
         <text
-          x={14}
+          x={22}
           y={(plot.top + plot.bottom) / 2}
           textAnchor="middle"
-          transform={`rotate(-90 14 ${(plot.top + plot.bottom) / 2})`}
-          className="axis-title"
+          transform={`rotate(-90 22 ${(plot.top + plot.bottom) / 2})`}
+          className="axis-title axis-title-y"
         >
           {yTitle}
         </text>
