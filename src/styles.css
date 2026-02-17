@@ -448,6 +448,31 @@ pre {
   fill: #315ea8;
 }
 
+.axis-line {
+  stroke: rgba(34, 39, 24, 0.75);
+  stroke-width: 1.2;
+}
+
+.axis-grid {
+  stroke: rgba(34, 39, 24, 0.12);
+  stroke-width: 1;
+}
+
+.axis-tick {
+  stroke: rgba(34, 39, 24, 0.55);
+  stroke-width: 1;
+}
+
+.axis-text {
+  fill: rgba(34, 39, 24, 0.72);
+  font-size: 10px;
+}
+
+.axis-title {
+  fill: rgba(17, 23, 9, 0.9);
+  font-size: 11px;
+}
+
 .metrics-panel {
   display: grid;
   gap: 10px;
