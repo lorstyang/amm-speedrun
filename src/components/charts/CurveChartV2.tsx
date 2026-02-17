@@ -3,6 +3,15 @@ import { toNumber } from '../../core/math';
 
 interface CurveChartV2Props {
   state: PoolState;
+  xDomain?: {
+    min: number;
+    max: number;
+  };
+  referencePoint?: {
+    x: bigint;
+    y: bigint;
+    label?: string;
+  };
 }
 
 interface Point {
@@ -94,7 +103,7 @@ function resolveTradeLabelLayouts(
   };
 }
 
-export function CurveChartV2({ state }: CurveChartV2Props) {
+export function CurveChartV2({ state, xDomain, referencePoint }: CurveChartV2Props) {
   const width = 520;
   const height = 280;
 
@@ -102,8 +111,8 @@ export function CurveChartV2({ state }: CurveChartV2Props) {
   const reserveY = toNumber(state.reserveY);
   const k = reserveX * reserveY;
 
-  const minX = Math.max(1e-9, reserveX * 0.25);
-  const maxX = Math.max(minX * 1.2, reserveX * 2.2);
+  const minX = Math.max(1e-9, xDomain?.min ?? reserveX * 0.25);
+  const maxX = Math.max(minX * 1.2, xDomain?.max ?? reserveX * 2.2);
   const sampleCount = 80;
 
   const curvePoints: Point[] = Array.from({ length: sampleCount }, (_, index) => {
@@ -124,6 +133,12 @@ export function CurveChartV2({ state }: CurveChartV2Props) {
         y: toNumber(state.lastTrade.reserveYAfter)
       }
     : null;
+  const basePoint = referencePoint
+    ? {
+        x: toNumber(referencePoint.x),
+        y: toNumber(referencePoint.y)
+      }
+    : null;
 
   const allPoints = [...curvePoints, { x: reserveX, y: reserveY }];
   if (beforePoint) {
@@ -131,6 +146,9 @@ export function CurveChartV2({ state }: CurveChartV2Props) {
   }
   if (afterPoint) {
     allPoints.push(afterPoint);
+  }
+  if (basePoint) {
+    allPoints.push(basePoint);
   }
 
   const mapped = mapToPath(allPoints, width, height);
@@ -141,6 +159,9 @@ export function CurveChartV2({ state }: CurveChartV2Props) {
     : null;
   const after = afterPoint
     ? projectPoint(afterPoint, width, height, mapped.minX, mapped.maxX, mapped.minY, mapped.maxY)
+    : null;
+  const base = basePoint
+    ? projectPoint(basePoint, width, height, mapped.minX, mapped.maxX, mapped.minY, mapped.maxY)
     : null;
 
   const labels = before && after ? resolveTradeLabelLayouts(before, after, width, height) : null;
@@ -160,6 +181,15 @@ export function CurveChartV2({ state }: CurveChartV2Props) {
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} className="curve-svg" role="img" aria-label="AMM curve">
         <path d={curvePath} fill="none" stroke="var(--accent)" strokeWidth="3" />
+
+        {base ? (
+          <g>
+            <circle cx={base.px} cy={base.py} r="4" className="point-base" />
+            <text x={base.px - 8} y={base.py - 8} textAnchor="end" className="point-label">
+              {referencePoint?.label ?? 'Base'}
+            </text>
+          </g>
+        ) : null}
 
         {before ? (
           <g>

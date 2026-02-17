@@ -132,11 +132,44 @@ pre {
   align-items: start;
 }
 
+.main-grid.two-column {
+  grid-template-columns: 320px minmax(420px, 1fr);
+}
+
 .left-column,
 .center-column,
 .right-column {
   display: grid;
   gap: 12px;
+}
+
+.tab-switch {
+  margin-top: 12px;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.tab-switch button {
+  min-width: 130px;
+  height: 34px;
+  border: 1px solid rgba(40, 47, 30, 0.24);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tab-switch button.active {
+  border-color: rgba(15, 143, 112, 0.45);
+  background: rgba(15, 143, 112, 0.14);
+  color: var(--accent-soft);
 }
 
 .card,
@@ -243,6 +276,36 @@ pre {
   padding: 0 9px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.slider-block {
+  border: 1px dashed rgba(35, 41, 24, 0.22);
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.slider-input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.slider-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.slider-meta span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.slider-meta strong {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .inline-fields {
@@ -379,6 +442,10 @@ pre {
   stroke: rgba(34, 39, 24, 0.38);
   stroke-width: 1;
   stroke-dasharray: 2 2;
+}
+
+.point-base {
+  fill: #315ea8;
 }
 
 .metrics-panel {

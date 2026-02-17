@@ -2,7 +2,7 @@
 
 ## 0. 目标与范围
 
-**目标**：做一个用于学习与测试的 AMM（Uniswap v2）交互网页，支持 swap / add / remove，实时可视化曲线与指标，并支持历史回放。
+**目标**：做一个用于学习与测试的 AMM（Uniswap v2）交互网页，支持 swap / add / remove，实时可视化曲线与指标，并支持历史回放；同时提供“连续曲线演示”模式用于观察平滑动态图像变化。
 
 **范围（v1）**：
 
@@ -11,6 +11,8 @@
 * 操作：Swap、Add Liquidity、Remove Liquidity、Reset、Undo/Redo、导出/导入状态（可选）
 * 可视化：曲线图 + 当前点/交易后点 + 价格时间线（可选）
 * 指标：现价/成交均价/滑点/手续费/池子状态/LP 份额/累计手续费
+* 视图：支持 Tab 切换（交易实验 / 连续曲线）
+* 连续曲线：滑动条连续改变池中 `reserveX`，按 `x*y=k` 自动联动 `reserveY`，不依赖 execute/历史
 
 **非目标（v1 不做）**：
 
@@ -30,6 +32,10 @@
   * 模型选择（固定 v2，v2-only 可隐藏）
   * 预设场景下拉（Deep pool / Shallow pool / Imbalanced / 0 fee 等）
   * Reset / Undo / Redo / Export / Import（Export/Import 可选）
+* **Tab Switch（Header 下方）**
+
+  * `交易实验`：完整操作与历史回放
+  * `连续曲线`：最小化控制面板 + 曲线实时变化（隐藏 History / Last Trade 相关卡片）
 
 * **Main（三列布局）**
 
@@ -52,6 +58,11 @@
     * Metrics Panel（现价、成交均价、滑点、手续费、池深、LP 信息）
     * Operation History（列表 + 点击回放）
     * 状态快照（当前 reserves、LP supply、feeAcc 等）
+
+* **连续曲线模式（两列布局）**
+
+  * 左栏：`ContinuousCurveCard`（滑动条、比例快捷键、base/live reserves）
+  * 中栏：`PoolStateStrip + CurveChartV2`（只看连续变化，不执行交易）
 
 ---
 
@@ -192,6 +203,7 @@
 * `AppShell`
 
   * `HeaderBar`
+  * `TabSwitch`
   * `MainGrid`（Left / Center / Right）
 
 ### 4.2 左栏：操作组件
@@ -202,6 +214,11 @@
   * `AmountInput`（支持 slider + 输入框 + “MAX”按钮）
   * `SwapPreview`（dy、avgPrice、fee、slippage）
   * `SwapButton`
+* `ContinuousCurveCard`
+
+  * `ReserveXSlider`（连续调节池中 X）
+  * `LiveReservePreview`（base/live 对比）
+  * `CurvePlayHint`（说明“仅可视化，不写历史”）
 * `AddLiquidityCard`
 
   * `DualAmountInput`（ax、ay）
@@ -318,6 +335,12 @@ src/
 
 * 预设场景、价格时间线、导出/导入状态
 * 外部价格 + 套利演示
+
+### Milestone D （todo）
+
+* Tab 结构：交易实验 / 连续曲线
+* 连续曲线演示：滑动条连续改变 reserves，曲线平滑实时响应
+* 连续模式隐藏非必要卡片（History/Last Trade）
 
 # 技术方案
 React + TypeScript + Vite

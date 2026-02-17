@@ -2,19 +2,23 @@ import { ReactNode } from 'react';
 
 interface AppShellProps {
   header: ReactNode;
+  toolbar?: ReactNode;
   left: ReactNode;
   center: ReactNode;
-  right: ReactNode;
+  right?: ReactNode;
+  columns?: 'three' | 'two';
 }
 
-export function AppShell({ header, left, center, right }: AppShellProps) {
+export function AppShell({ header, toolbar, left, center, right, columns = 'three' }: AppShellProps) {
+  const className = columns === 'two' ? 'main-grid two-column' : 'main-grid';
   return (
     <div className="app-shell">
       {header}
-      <main className="main-grid">
+      {toolbar}
+      <main className={className}>
         <aside className="left-column">{left}</aside>
         <section className="center-column">{center}</section>
-        <aside className="right-column">{right}</aside>
+        {columns === 'three' ? <aside className="right-column">{right}</aside> : null}
       </main>
     </div>
   );
