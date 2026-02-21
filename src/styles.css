@@ -278,6 +278,28 @@ pre {
   cursor: pointer;
 }
 
+.liquidity-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.liquidity-tabs button {
+  border: 1px solid rgba(40, 47, 30, 0.24);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  height: 30px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.liquidity-tabs button.active {
+  border-color: rgba(15, 143, 112, 0.45);
+  background: rgba(15, 143, 112, 0.14);
+  color: var(--accent-soft);
+}
+
 .slider-block {
   border: 1px dashed rgba(35, 41, 24, 0.22);
   border-radius: 10px;

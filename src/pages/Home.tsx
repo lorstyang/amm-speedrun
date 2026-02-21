@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AddLiquidityCard } from '../components/actions/AddLiquidityCard';
 import { ContinuousCurveCard } from '../components/actions/ContinuousCurveCard';
 import { ExternalArbitrageCard } from '../components/actions/ExternalArbitrageCard';
-import { RemoveLiquidityCard } from '../components/actions/RemoveLiquidityCard';
+import { LiquidityCard } from '../components/actions/LiquidityCard';
 import { SwapCard } from '../components/actions/SwapCard';
 import { CurveChartV2 } from '../components/charts/CurveChartV2';
 import { PoolStateStrip } from '../components/charts/PoolStateStrip';
@@ -154,20 +153,16 @@ export function Home() {
             onApplyStep={store.actions.applyArbitrage}
             onApplyAuto={store.actions.applyArbitrageAuto}
           />
-          <AddLiquidityCard
+          <LiquidityCard
             tokenXSymbol={baseState.tokenX.symbol}
             tokenYSymbol={baseState.tokenY.symbol}
             reserveX={baseState.reserveX}
             reserveY={baseState.reserveY}
-            onQuote={store.actions.quoteAddLiquidity}
-            onAdd={store.actions.applyAddLiquidity}
-          />
-          <RemoveLiquidityCard
-            tokenXSymbol={baseState.tokenX.symbol}
-            tokenYSymbol={baseState.tokenY.symbol}
             lpUserBalance={baseState.lpUserBalance}
-            onQuote={store.actions.quoteRemoveLiquidity}
-            onRemove={store.actions.applyRemoveLiquidity}
+            onQuoteDeposit={store.actions.quoteAddLiquidity}
+            onDeposit={store.actions.applyAddLiquidity}
+            onQuoteWithdraw={store.actions.quoteRemoveLiquidity}
+            onWithdraw={store.actions.applyRemoveLiquidity}
           />
         </>
       }
