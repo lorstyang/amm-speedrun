@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AddLiquidityQuote, RemoveLiquidityQuote } from '../../core/types';
-import { formatFp, formatPercentFp, safeParseFp } from '../../core/math';
+import { ZERO, formatFp, formatPercentFp, safeParseFp } from '../../core/math';
 import { ActionButton } from '../common/ActionButton';
 import { Card } from '../common/Card';
 import { NumberField } from '../common/NumberField';
@@ -32,9 +32,17 @@ export function LiquidityCard({
   const [message, setMessage] = useState<string | null>(null);
 
   const [amountXText, setAmountXText] = useState('10');
-  const [amountYText, setAmountYText] = useState('20000');
   const amountX = safeParseFp(amountXText);
-  const amountY = safeParseFp(amountYText);
+  const amountYAuto = useMemo(() => {
+    if (amountX === null || amountX <= ZERO) {
+      return null;
+    }
+    if (reserveX <= ZERO || reserveY <= ZERO) {
+      return amountX;
+    }
+    return (amountX * reserveY) / reserveX;
+  }, [amountX, reserveX, reserveY]);
+  const amountYAutoText = amountYAuto === null ? '' : formatFp(amountYAuto, 8);
 
   const [burnText, setBurnText] = useState('1');
   const burnLp = safeParseFp(burnText);
@@ -44,11 +52,11 @@ export function LiquidityCard({
   }, [mode]);
 
   const depositQuote = useMemo(() => {
-    if (amountX === null || amountY === null) {
+    if (amountX === null || amountYAuto === null) {
       return null;
     }
-    return onQuoteDeposit(amountX, amountY);
-  }, [amountX, amountY, onQuoteDeposit]);
+    return onQuoteDeposit(amountX, amountYAuto);
+  }, [amountX, amountYAuto, onQuoteDeposit]);
 
   const withdrawQuote = useMemo(() => {
     if (burnLp === null) {
@@ -57,26 +65,16 @@ export function LiquidityCard({
     return onQuoteWithdraw(burnLp);
   }, [burnLp, onQuoteWithdraw]);
 
-  const ratio = reserveX > 0n ? Number(reserveY) / Number(reserveX) : 0;
-
-  const onAutofill = () => {
-    if (!ratio) {
-      return;
-    }
-    const x = Number(amountX ?? 0n) / 1e18;
-    setAmountYText((x * ratio).toFixed(4));
-  };
-
   const onMaxWithdraw = () => {
     setBurnText((Number(lpUserBalance) / 1e18).toString());
   };
 
   const submitDeposit = () => {
-    if (amountX === null || amountY === null) {
+    if (amountX === null || amountYAuto === null) {
       setMessage('请输入合法数字');
       return;
     }
-    const result = onDeposit(amountX, amountY);
+    const result = onDeposit(amountX, amountYAuto);
     if (!result.ok) {
       setMessage(result.error ?? 'Deposit failed');
       return;
@@ -130,18 +128,13 @@ export function LiquidityCard({
           />
           <NumberField
             label={`Deposit ${tokenYSymbol}`}
-            value={amountYText}
-            onChange={setAmountYText}
+            value={amountYAutoText}
+            onChange={() => {}}
+            readOnly
             step="0.0001"
             min="0"
-            helper="输入不按池子比例时会自动裁剪并退款"
+            helper={`按当前池比例自动计算 ${tokenYSymbol}`}
           />
-
-          <div className="quick-actions">
-            <button type="button" onClick={onAutofill}>
-              按池比例填充 {tokenYSymbol}
-            </button>
-          </div>
 
           <div className="preview-grid">
             <div>

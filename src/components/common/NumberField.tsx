@@ -2,6 +2,7 @@ interface NumberFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  readOnly?: boolean;
   placeholder?: string;
   step?: string;
   min?: string;
@@ -13,6 +14,7 @@ export function NumberField({
   label,
   value,
   onChange,
+  readOnly,
   placeholder,
   step,
   min,
@@ -27,6 +29,7 @@ export function NumberField({
         inputMode="decimal"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        readOnly={readOnly}
         placeholder={placeholder}
         step={step}
         min={min}

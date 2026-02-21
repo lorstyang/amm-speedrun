@@ -118,6 +118,11 @@ pre {
   font-variant-numeric: tabular-nums;
 }
 
+.field input[readonly] {
+  background: rgba(244, 245, 238, 0.9);
+  color: rgba(34, 39, 24, 0.82);
+}
+
 .topbar-message {
   margin: 0;
   color: var(--accent-soft);
