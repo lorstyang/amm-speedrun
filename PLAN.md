@@ -331,12 +331,12 @@ src/
 * history + undo/redo
 * 完整单元测试
 
-### Milestone C （todo）
+### Milestone C
 
 * 预设场景、价格时间线、导出/导入状态
 * 外部价格 + 套利演示
 
-### Milestone D （todo）
+### Milestone D
 
 * Tab 结构：交易实验 / 连续曲线
 * 连续曲线演示：滑动条连续改变 reserves，曲线平滑实时响应
