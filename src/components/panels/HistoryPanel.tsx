@@ -1,8 +1,11 @@
-import { TimelineEntry } from '../../core/types';
 import { ActionButton } from '../common/ActionButton';
 
 interface HistoryPanelProps {
-  timeline: TimelineEntry[];
+  timeline: Array<{
+    id: number;
+    label: string;
+    createdAt: number;
+  }>;
   cursor: number;
   canUndo: boolean;
   canRedo: boolean;
