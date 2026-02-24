@@ -1,23 +1,23 @@
-# AMM 可视化交互网页开发计划（Uniswap v2 / Constant Product）
+# AMM 可视化交互网页开发计划（Uniswap v2 + Uniswap v3）
 
 ## 0. 目标与范围
 
-**目标**：做一个用于学习与测试的 AMM（Uniswap v2）交互网页，支持 swap / add / remove，实时可视化曲线与指标，并支持历史回放；同时提供“连续曲线演示”模式用于观察平滑动态图像变化。
+**目标**：做一个用于学习与测试的 AMM 交互网页，同时支持 Uniswap v2 与 Uniswap v3 教学核心能力。v2 继续保留 swap / add / remove / 连续曲线；v3 新增集中流动性、价格区间、跨 tick 交易与单仓位 LP。
 
 **范围（v1）**：
 
 * 单池：Token A / Token B（可改名、可设小数位）
-* 模型：恒定乘积 AMM（Uniswap v2）
+* 模型：Uniswap v2（恒定乘积）+ Uniswap v3（集中流动性，Q64.96）
 * 操作：Swap、Add Liquidity、Remove Liquidity、Reset、Undo/Redo、导出/导入状态（可选）
 * 可视化：曲线图 + 当前点/交易后点 + 价格时间线（可选）
 * 指标：现价/成交均价/滑点/手续费/池子状态/LP 份额/累计手续费
 * 视图：支持 Tab 切换（交易实验 / 连续曲线）
 * 连续曲线：滑动条连续改变池中 `reserveX`，按 `x*y=k` 自动联动 `reserveY`，不依赖 execute/历史
 
-**非目标（v1 不做）**：
+**非目标（当前版本不做）**：
 
 * 多池路由、跨池套利
-* v3 集中流动性、稳定币曲线
+* v3 multi-position、exact-output、外部套利、连续曲线
 * 链上连接、钱包、真实合约交互
 
 ---
@@ -29,7 +29,7 @@
 * **Header**
 
   * 项目标题（AMM Lab）
-  * 模型选择（固定 v2，v2-only 可隐藏）
+  * 模型选择（v2 / v3）
   * 预设场景下拉（Deep pool / Shallow pool / Imbalanced / 0 fee 等）
   * Reset / Undo / Redo / Export / Import（Export/Import 可选）
 * **Tab Switch（Header 下方）**
@@ -342,8 +342,22 @@ src/
 * 连续曲线演示：滑动条连续改变 reserves，曲线平滑实时响应
 * 连续模式隐藏非必要卡片（History/Last Trade）
 
+### Milestone E（Uniswap v3 教学核心版）
+
+* 页面新增 v2 / v3 模式切换；v2 交互保持不变
+* v3 支持：
+  * fee tier（0.05% / 0.3% / 1%）与 tick spacing
+  * 单仓位集中流动性（tickLower / tickUpper）
+  * exact-in swap（Q64.96，支持跨边界）
+  * 超出区间后 partial fill（返回 consumed / unfilled）
+  * add/remove liquidity、history、undo/redo、导入/导出
+* v3 首版不做：
+  * 外部套利卡片
+  * 连续曲线模式
+  * multi-position 与 exact-output
+
 # 技术方案
 React + TypeScript + Vite
 
 # Further
-v3 的集中流动性
+v3 multi-position、exact-output、稳定币曲线、跨池路由
