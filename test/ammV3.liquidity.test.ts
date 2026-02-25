@@ -6,7 +6,7 @@ import {
   quoteV3AddLiquidity,
   quoteV3RemoveLiquidity
 } from '../src/core/ammV3';
-import { parseFp } from '../src/core/math';
+import { formatFp, parseFp } from '../src/core/math';
 
 describe('ammV3 add/remove liquidity', () => {
   it('adds liquidity and returns used/refund amounts', () => {
@@ -148,5 +148,34 @@ describe('ammV3 add/remove liquidity', () => {
       return;
     }
     expect(successQuote.rangeUpdated).toBe(true);
+  });
+
+  it('allows range update after near-max withdraw that leaves UI dust', () => {
+    const state = createInitialV3PoolState({
+      initialPriceYPerX: '1',
+      tickLower: -600,
+      tickUpper: 600,
+      initialAmountX: '123.456789123456789',
+      initialAmountY: '123.456789123456789'
+    });
+
+    const roundedBurn = parseFp(formatFp(state.position.liquidity, 8));
+    expect(roundedBurn).toBeLessThan(state.position.liquidity);
+
+    const removeQuote = quoteV3RemoveLiquidity(state, roundedBurn);
+    expect(removeQuote.ok).toBe(true);
+    if (!removeQuote.ok) {
+      return;
+    }
+
+    const afterRemove = applyV3RemoveLiquidity(state, removeQuote);
+    const updateRangeQuote = quoteV3AddLiquidity(afterRemove, {
+      amountXIn: parseFp('10'),
+      amountYIn: parseFp('10'),
+      tickLower: -1200,
+      tickUpper: 1200
+    });
+
+    expect(updateRangeQuote.ok).toBe(true);
   });
 });

@@ -20,6 +20,7 @@ import {
 } from './math';
 import {
   FEE_TIER_TO_TICK_SPACING,
+  LIQUIDITY_DUST_X18,
   MAX_SQRT_RATIO,
   MAX_TICK,
   MIN_SQRT_RATIO,
@@ -78,6 +79,10 @@ function normalizeRange(tickLower: number, tickUpper: number, spacing: number): 
 
 function isTickInRange(tick: number, tickLower: number, tickUpper: number): boolean {
   return tick >= tickLower && tick < tickUpper;
+}
+
+function normalizeLiquidity(value: bigint): bigint {
+  return value <= LIQUIDITY_DUST_X18 ? ZERO : value;
 }
 
 export function cloneV3State(state: V3PoolState): V3PoolState {
@@ -245,14 +250,15 @@ export function quoteV3SwapExactIn(state: V3PoolState, direction: SwapDirection,
   if (amountIn <= ZERO) {
     return buildInvalidSwapQuote(direction, amountIn, 'Input amount must be greater than zero');
   }
-  if (state.liquidity <= ZERO) {
+  const activeLiquidity = normalizeLiquidity(state.liquidity);
+  if (activeLiquidity <= ZERO) {
     return buildInvalidSwapQuote(direction, amountIn, 'No active liquidity at current tick');
   }
 
   const zeroForOne = direction === 'X_TO_Y';
   const sqrtBefore = state.sqrtPriceX96;
   const tickBefore = state.tickCurrent;
-  const liquidityBefore = state.liquidity;
+  const liquidityBefore = activeLiquidity;
   const targetTick = zeroForOne ? state.position.tickLower : state.position.tickUpper;
   const targetSqrt = getSqrtRatioAtTick(targetTick);
 
@@ -281,7 +287,7 @@ export function quoteV3SwapExactIn(state: V3PoolState, direction: SwapDirection,
   const sqrtAfter = step.sqrtRatioNextX96;
   const tickAfter = getTickAtSqrtRatio(sqrtAfter);
   const crossedBoundary = step.reachedTarget;
-  const liquidityAfter = crossedBoundary ? ZERO : liquidityBefore;
+  const liquidityAfter = normalizeLiquidity(crossedBoundary ? ZERO : liquidityBefore);
 
   const spotBefore = spotPriceFromSqrtX96(sqrtBefore);
   const spotAfter = spotPriceFromSqrtX96(sqrtAfter);
@@ -329,7 +335,7 @@ export function applyV3SwapExactIn(state: V3PoolState, quote: V3SwapQuote): V3Po
   const next = cloneV3State(state);
   next.sqrtPriceX96 = quote.sqrtPriceAfterX96;
   next.tickCurrent = quote.tickAfter;
-  next.liquidity = quote.liquidityAfter;
+  next.liquidity = normalizeLiquidity(quote.liquidityAfter);
   next.t = state.t + 1;
 
   if (quote.direction === 'X_TO_Y') {
@@ -383,10 +389,11 @@ export function quoteV3AddLiquidity(state: V3PoolState, params: V3AddLiquidityPa
     state.tickSpacing
   );
 
+  const currentPositionLiquidity = normalizeLiquidity(state.position.liquidity);
   const rangeUpdated =
     requestedRange.tickLower !== state.position.tickLower || requestedRange.tickUpper !== state.position.tickUpper;
 
-  if (rangeUpdated && state.position.liquidity > ZERO) {
+  if (rangeUpdated && currentPositionLiquidity > ZERO) {
     return buildInvalidAddQuote(
       params,
       'Range can only be updated when existing position liquidity is zero'
@@ -409,8 +416,8 @@ export function quoteV3AddLiquidity(state: V3PoolState, params: V3AddLiquidityPa
   }
 
   const used = getAmountsForLiquidity(liquidityDelta, state.sqrtPriceX96, sqrtLower, sqrtUpper);
-  const baseLiquidity = rangeUpdated ? ZERO : state.position.liquidity;
-  const positionLiquidityAfter = baseLiquidity + liquidityDelta;
+  const baseLiquidity = rangeUpdated ? ZERO : currentPositionLiquidity;
+  const positionLiquidityAfter = normalizeLiquidity(baseLiquidity + liquidityDelta);
 
   return {
     ok: true,
@@ -442,21 +449,22 @@ export function applyV3AddLiquidity(state: V3PoolState, quote: V3AddLiquidityQuo
     next.position.tickUpper = quote.tickUpper;
   }
 
-  next.position.liquidity = quote.positionLiquidityAfter;
-  next.liquidity = quote.activeLiquidityAfter;
+  next.position.liquidity = normalizeLiquidity(quote.positionLiquidityAfter);
+  next.liquidity = normalizeLiquidity(quote.activeLiquidityAfter);
   next.t = state.t + 1;
   next.lastTrade = null;
   return next;
 }
 
 export function quoteV3RemoveLiquidity(state: V3PoolState, liquidityDelta: bigint): V3RemoveLiquidityQuote {
+  const currentPositionLiquidity = normalizeLiquidity(state.position.liquidity);
   if (liquidityDelta <= ZERO) {
     return buildInvalidRemoveQuote(liquidityDelta, 'Liquidity burn amount must be greater than zero');
   }
-  if (state.position.liquidity <= ZERO) {
+  if (currentPositionLiquidity <= ZERO) {
     return buildInvalidRemoveQuote(liquidityDelta, 'No position liquidity to remove');
   }
-  if (liquidityDelta > state.position.liquidity) {
+  if (liquidityDelta > currentPositionLiquidity) {
     return buildInvalidRemoveQuote(liquidityDelta, 'Cannot remove more than current position liquidity');
   }
 
@@ -468,7 +476,7 @@ export function quoteV3RemoveLiquidity(state: V3PoolState, liquidityDelta: bigin
     return buildInvalidRemoveQuote(liquidityDelta, 'Withdraw amount too small at current precision');
   }
 
-  const positionLiquidityAfter = state.position.liquidity - liquidityDelta;
+  const positionLiquidityAfter = normalizeLiquidity(currentPositionLiquidity - liquidityDelta);
 
   return {
     ok: true,
@@ -488,8 +496,8 @@ export function applyV3RemoveLiquidity(state: V3PoolState, quote: V3RemoveLiquid
   }
 
   const next = cloneV3State(state);
-  next.position.liquidity = quote.positionLiquidityAfter;
-  next.liquidity = quote.activeLiquidityAfter;
+  next.position.liquidity = normalizeLiquidity(quote.positionLiquidityAfter);
+  next.liquidity = normalizeLiquidity(quote.activeLiquidityAfter);
   next.t = state.t + 1;
   next.lastTrade = null;
   return next;

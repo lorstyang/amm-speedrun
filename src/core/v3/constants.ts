@@ -11,6 +11,7 @@ export const MIN_SQRT_RATIO = 4295128739n;
 export const MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342n;
 
 export const FEE_UNITS = 1_000_000n;
+export const LIQUIDITY_DUST_X18 = 10_000_000_000n; // 1e-8 on 1e18 scale
 
 export const FEE_TIER_TO_TICK_SPACING: Record<V3FeeTier, number> = {
   500: 10,

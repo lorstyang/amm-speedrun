@@ -92,7 +92,7 @@ export function LiquidityCardV3({
   }, [onQuoteRemove, removeLiquidity]);
 
   const onMaxRemove = () => {
-    setRemoveLiquidityText(formatFp(positionLiquidity, 8));
+    setRemoveLiquidityText(formatFp(positionLiquidity, 18));
   };
 
   const onSubmitAdd = () => {

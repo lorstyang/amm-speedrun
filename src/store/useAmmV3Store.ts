@@ -11,7 +11,7 @@ import {
   spotPriceV3YPerX
 } from '../core/ammV3';
 import { deserializeV3PoolState, serializeV3PoolState } from '../core/serializationV3';
-import { FEE_TIER_TO_TICK_SPACING, MAX_TICK, MIN_TICK } from '../core/v3/constants';
+import { FEE_TIER_TO_TICK_SPACING, LIQUIDITY_DUST_X18, MAX_TICK, MIN_TICK } from '../core/v3/constants';
 import {
   OperationKind,
   SwapDirection,
@@ -333,13 +333,13 @@ export function useAmmV3Store() {
       },
       updateFeeTier(feeTier: V3FeeTier): { ok: boolean; error?: string } {
         const current = present;
-        if (current.position.liquidity > 0n) {
+        if (current.position.liquidity > LIQUIDITY_DUST_X18) {
           return { ok: false, error: 'Set position liquidity to zero before changing fee tier' };
         }
 
         setTimelineState((prev) => {
           const snapshot = cloneV3State(currentSnapshotV3(prev));
-          if (snapshot.position.liquidity > 0n) {
+          if (snapshot.position.liquidity > LIQUIDITY_DUST_X18) {
             return prev;
           }
 
