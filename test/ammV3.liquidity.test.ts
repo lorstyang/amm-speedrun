@@ -39,6 +39,55 @@ describe('ammV3 add/remove liquidity', () => {
     expect(next.liquidity).toBeGreaterThan(0n);
   });
 
+  it('supports single-sided deposit when current price is outside range', () => {
+    const state = createInitialV3PoolState({
+      initialPriceYPerX: '1',
+      initialAmountX: '0',
+      initialAmountY: '0'
+    });
+
+    const quoteToken0Only = quoteV3AddLiquidity(state, {
+      amountXIn: parseFp('25'),
+      amountYIn: 0n,
+      tickLower: 600,
+      tickUpper: 1200
+    });
+    expect(quoteToken0Only.ok).toBe(true);
+    if (quoteToken0Only.ok) {
+      expect(quoteToken0Only.amountXUsed).toBeGreaterThan(0n);
+      expect(quoteToken0Only.amountYUsed).toBe(0n);
+    }
+
+    const quoteToken1Only = quoteV3AddLiquidity(state, {
+      amountXIn: 0n,
+      amountYIn: parseFp('25'),
+      tickLower: -1200,
+      tickUpper: -600
+    });
+    expect(quoteToken1Only.ok).toBe(true);
+    if (quoteToken1Only.ok) {
+      expect(quoteToken1Only.amountXUsed).toBe(0n);
+      expect(quoteToken1Only.amountYUsed).toBeGreaterThan(0n);
+    }
+  });
+
+  it('still requires both tokens for in-range single position', () => {
+    const state = createInitialV3PoolState({
+      initialPriceYPerX: '1',
+      initialAmountX: '0',
+      initialAmountY: '0'
+    });
+
+    const quote = quoteV3AddLiquidity(state, {
+      amountXIn: parseFp('10'),
+      amountYIn: 0n,
+      tickLower: -600,
+      tickUpper: 600
+    });
+
+    expect(quote.ok).toBe(false);
+  });
+
   it('removes liquidity pro-rata by liquidity delta', () => {
     const state = createInitialV3PoolState({
       initialPriceYPerX: '1',

@@ -373,8 +373,8 @@ export function applyV3SwapExactIn(state: V3PoolState, quote: V3SwapQuote): V3Po
 }
 
 export function quoteV3AddLiquidity(state: V3PoolState, params: V3AddLiquidityParams): V3AddLiquidityQuote {
-  if (params.amountXIn <= ZERO || params.amountYIn <= ZERO) {
-    return buildInvalidAddQuote(params, 'Both token amounts must be greater than zero');
+  if (params.amountXIn <= ZERO && params.amountYIn <= ZERO) {
+    return buildInvalidAddQuote(params, 'At least one token amount must be greater than zero');
   }
 
   const requestedRange = normalizeRange(

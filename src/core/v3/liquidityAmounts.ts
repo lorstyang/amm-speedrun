@@ -78,7 +78,7 @@ export function getLiquidityForAmounts(
   sqrtRatioBX96: bigint
 ): bigint {
   const [sqrtA, sqrtB] = sortSqrtRatios(sqrtRatioAX96, sqrtRatioBX96);
-  if (amount0 <= 0n || amount1 <= 0n || sqrtRatioX96 <= 0n || sqrtB <= sqrtA) {
+  if ((amount0 <= 0n && amount1 <= 0n) || sqrtRatioX96 <= 0n || sqrtB <= sqrtA) {
     return 0n;
   }
 
@@ -88,6 +88,10 @@ export function getLiquidityForAmounts(
 
   if (sqrtRatioX96 >= sqrtB) {
     return getLiquidityForAmount1(amount1, sqrtA, sqrtB);
+  }
+
+  if (amount0 <= 0n || amount1 <= 0n) {
+    return 0n;
   }
 
   const liq0 = getLiquidityForAmount0(amount0, sqrtRatioX96, sqrtB);
