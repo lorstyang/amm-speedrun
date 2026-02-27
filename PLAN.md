@@ -17,7 +17,7 @@
 **非目标（当前版本不做）**：
 
 * 多池路由、跨池套利
-* v3 multi-position、exact-output、外部套利、连续曲线
+* v3 multi-position、exact-output、外部套利
 * 链上连接、钱包、真实合约交互
 
 ---
@@ -353,8 +353,15 @@ src/
   * add/remove liquidity、history、undo/redo、导入/导出
 * v3 首版不做：
   * 外部套利卡片
-  * 连续曲线模式
   * multi-position 与 exact-output
+
+### Milestone F（v3 连续曲线模式）
+
+* v3 `连续曲线` tab 启用：通过 tick 滑条连续改变 `tickCurrent` 与 `sqrtPriceX96`
+* 仅可视化，不执行 swap/add/remove，不写 History
+* 连续模式下展示：
+  * `ContinuousCurveCardV3`（tick delta、quick actions、base/live spot）
+  * `PoolStateStripV3 + LiquidityRangeChartV3`
 
 # 技术方案
 React + TypeScript + Vite

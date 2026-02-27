@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ContinuousCurveCard } from '../components/actions/ContinuousCurveCard';
+import { ContinuousCurveCardV3 } from '../components/actions/ContinuousCurveCardV3';
 import { ExternalArbitrageCard } from '../components/actions/ExternalArbitrageCard';
 import { LiquidityCard } from '../components/actions/LiquidityCard';
 import { LiquidityCardV3 } from '../components/actions/LiquidityCardV3';
@@ -18,8 +19,11 @@ import { MetricsPanelV3 } from '../components/panels/MetricsPanelV3';
 import { SnapshotViewer } from '../components/panels/SnapshotViewer';
 import { SnapshotViewerV3 } from '../components/panels/SnapshotViewerV3';
 import { cloneState, spotPriceYPerX } from '../core/ammV2';
+import { cloneV3State, spotPriceV3YPerX } from '../core/ammV3';
 import { formatFp, toNumber } from '../core/math';
 import { AmmModel } from '../core/types';
+import { MAX_TICK, MIN_TICK } from '../core/v3/constants';
+import { getSqrtRatioAtTick } from '../core/v3/tickMath';
 import { useAmmStore } from '../store/useAmmStore';
 import { useAmmV3Store } from '../store/useAmmV3Store';
 
@@ -30,12 +34,19 @@ export function Home() {
   const [model, setModel] = useState<AmmModel>('v2');
   const [activeTab, setActiveTab] = useState<'trade' | 'continuous'>('trade');
   const [continuousRatioBps, setContinuousRatioBps] = useState(10000);
+  const [continuousV3TickDelta, setContinuousV3TickDelta] = useState(0);
 
   const baseState = v2Store.present;
 
   useEffect(() => {
     setContinuousRatioBps(10000);
   }, [baseState.reserveX, baseState.reserveY, baseState.t]);
+
+  const v3State = v3Store.present;
+
+  useEffect(() => {
+    setContinuousV3TickDelta(0);
+  }, [v3State.tickCurrent, v3State.t, v3State.position.tickLower, v3State.position.tickUpper]);
 
   useEffect(() => {
     setActiveTab('trade');
@@ -62,6 +73,24 @@ export function Home() {
     min: Math.max(1e-9, baseXNum * 0.2),
     max: Math.max(1e-9, baseXNum * 3)
   };
+
+  const continuousV3State = useMemo(() => {
+    const next = cloneV3State(v3State);
+    const maxDown = MIN_TICK - v3State.tickCurrent;
+    const maxUp = MAX_TICK - v3State.tickCurrent;
+    const safeDelta = Math.max(maxDown, Math.min(maxUp, continuousV3TickDelta));
+    const nextTick = v3State.tickCurrent + safeDelta;
+
+    next.tickCurrent = nextTick;
+    next.sqrtPriceX96 = getSqrtRatioAtTick(nextTick);
+    next.liquidity = nextTick >= next.position.tickLower && nextTick < next.position.tickUpper ? next.position.liquidity : 0n;
+    next.lastTrade = null;
+
+    return next;
+  }, [v3State, continuousV3TickDelta]);
+
+  const continuousV3MinTickDelta = Math.max(MIN_TICK - v3State.tickCurrent, -v3State.tickSpacing * 400);
+  const continuousV3MaxTickDelta = Math.min(MAX_TICK - v3State.tickCurrent, v3State.tickSpacing * 400);
 
   const v2Header = (
     <HeaderBar
@@ -211,7 +240,6 @@ export function Home() {
     );
   }
 
-  const v3State = v3Store.present;
   const v3Header = (
     <HeaderBar
       model={model}
@@ -235,8 +263,12 @@ export function Home() {
       <button type="button" className={activeTab === 'trade' ? 'active' : ''} onClick={() => setActiveTab('trade')}>
         交易实验
       </button>
-      <button type="button" className={activeTab === 'continuous' ? 'active disabled' : 'disabled'} disabled>
-        连续曲线（V3 首版未支持）
+      <button
+        type="button"
+        className={activeTab === 'continuous' ? 'active' : ''}
+        onClick={() => setActiveTab('continuous')}
+      >
+        连续曲线
       </button>
     </section>
   );
@@ -247,8 +279,40 @@ export function Home() {
         header={v3Header}
         toolbar={v3Toolbar}
         columns="two"
-        left={<section className="card"><header className="card-header"><h3>V3 Continuous Mode</h3></header><div className="card-content"><p className="hint">V3 首版不包含连续曲线模式，请在交易实验页进行 swap 与流动性操作。</p></div></section>}
-        center={<LiquidityRangeChartV3 state={v3State} />}
+        left={
+          <ContinuousCurveCardV3
+            tokenXSymbol={v3State.tokenX.symbol}
+            tokenYSymbol={v3State.tokenY.symbol}
+            baseTick={v3State.tickCurrent}
+            liveTick={continuousV3State.tickCurrent}
+            tickLower={v3State.position.tickLower}
+            tickUpper={v3State.position.tickUpper}
+            tickSpacing={v3State.tickSpacing}
+            baseSpotYPerX={spotPriceV3YPerX(v3State)}
+            liveSpotYPerX={spotPriceV3YPerX(continuousV3State)}
+            tickDelta={continuousV3TickDelta}
+            minTickDelta={continuousV3MinTickDelta}
+            maxTickDelta={continuousV3MaxTickDelta}
+            onTickDeltaChange={setContinuousV3TickDelta}
+            onReset={() => setContinuousV3TickDelta(0)}
+          />
+        }
+        center={
+          <>
+            <PoolStateStripV3 state={continuousV3State} />
+            <LiquidityRangeChartV3 state={continuousV3State} />
+            <section className="card">
+              <header className="card-header">
+                <h3>Continuous Mode</h3>
+              </header>
+              <div className="card-content">
+                <p className="hint">该模式只用于连续观察 tick 与价格变化，不触发 swap/add/remove，也不会更新 History 与 Last Trade。</p>
+                <p className="hint">Base Spot: {formatFp(spotPriceV3YPerX(v3State), 8)} {v3State.tokenY.symbol}/{v3State.tokenX.symbol}</p>
+                <p className="hint">Live Spot: {formatFp(spotPriceV3YPerX(continuousV3State), 8)} {v3State.tokenY.symbol}/{v3State.tokenX.symbol}</p>
+              </div>
+            </section>
+          </>
+        }
       />
     );
   }
@@ -291,7 +355,7 @@ export function Home() {
             </header>
             <div className="card-content">
               <p className="hint">支持集中流动性、单仓位 LP、跨 tick 边界与 partial fill（超范围输入保留）。</p>
-              <p className="hint">首版不包含外部套利和连续曲线模式。</p>
+              <p className="hint">外部套利未接入；连续曲线模式可通过上方 Tab 进入。</p>
               <p className="hint">当前 Spot: {formatFp(v3Store.actions.spotPrice(), 8)} {v3State.tokenY.symbol}/{v3State.tokenX.symbol}</p>
             </div>
           </section>

@@ -20,13 +20,13 @@
 - swap exact-in（支持跨边界）
 - partial fill：超过区间后返回 consumed / unfilled
 - add/remove liquidity、历史回放、undo/redo、导入/导出（v3 payload）
+- 连续曲线模式（tick/price 连续演示，不写历史）
 
 ## 当前不支持（v3）
 
 - multi-position
 - exact-output
 - 外部套利
-- 连续曲线模式
 - 链上交互
 
 ## 本地运行
